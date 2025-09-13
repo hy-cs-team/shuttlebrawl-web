@@ -3,6 +3,7 @@ import { MAP_HEIGHT, MAP_WIDTH } from '../config';
 
 function Minimap() {
   const players = useGameStore((s) => s.players);
+  const shuttlecocks = useGameStore((s) => s.shuttlecocks);
   const myId = useGameStore((s) => s.myId);
 
   const minimapWidth = 200;
@@ -16,9 +17,10 @@ function Minimap() {
       className='absolute top-4 right-4 bg-black/60 border-2 border-cyan-400/50 rounded-sm shadow-lg'
       style={{ width: minimapWidth, height: minimapHeight }}
     >
+      {/* Players */}
       {Object.values(players).map((p) => (
         <div
-          key={p.id}
+          key={`player-${p.id}`}
           className='absolute rounded-full'
           style={{
             left: `${p.x * scaleX}px`,
@@ -28,6 +30,22 @@ function Minimap() {
             backgroundColor: p.color || 'white',
             transform: 'translate(-50%, -50%)',
             border: p.id === myId ? '2px solid yellow' : 'none',
+            boxSizing: 'content-box',
+          }}
+        />
+      ))}
+      {/* Shuttlecocks */}
+      {Object.values(shuttlecocks).map((sc) => (
+        <div
+          key={`sc-${sc.id}`}
+          className='absolute rounded-full'
+          style={{
+            left: `${sc.x * scaleX}px`,
+            top: `${sc.y * scaleY}px`,
+            width: '4px',
+            height: '4px',
+            backgroundColor: 'white',
+            transform: 'translate(-50%, -50%)',
           }}
         />
       ))}
@@ -36,3 +54,4 @@ function Minimap() {
 }
 
 export default Minimap;
+
