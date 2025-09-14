@@ -19,18 +19,22 @@ export type PlayerBase = {
 export type Player = PlayerBase &
 {
   exp: number;
+  requiredExp: number; // 추가: 레벨업에 필요한 총 경험치
   level: number;
   movement: Movement;
   racketSize: number;
   swingSpeed: number;
   swingPower: number;
   moveSpeed: number;
+  stats: number; // 추가: 아직 사용하지 않은 업그래이드 스탯 수
 
   isSwinging: boolean;
   swingAngle: number;
   swingTimer: number;
   swingDirection: number; // 1 or -1
   stunTimer: number;
+  knockbackVx: number; // 추가
+  knockbackVy: number; // 추가
 } &
   Record<string, unknown>;
 
