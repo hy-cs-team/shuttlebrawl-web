@@ -5,6 +5,7 @@ import { useGameStore } from './store/gameStore';
 import { socketManager } from './lib/SocketManager';
 import Minimap from './components/Minimap';
 import PlayerList from './components/PlayerList';
+import UpgradeUI from './components/UpgradeUI';
 
 export default function App() {
   const joined = useGameStore(s => s.joined);
@@ -51,6 +52,7 @@ export default function App() {
           <>
             <Minimap />
             <PlayerList />
+            <UpgradeUI />
           </>
         )}
         {!joined && <JoinUI />}

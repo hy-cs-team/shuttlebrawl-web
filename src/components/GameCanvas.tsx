@@ -164,7 +164,9 @@ function drawScene(
       ctx.translate(p.x, p.y)
       ctx.rotate(racketAngle)
       ctx.fillStyle = 'white'
-      ctx.fillRect(15, -4, 30, 8)
+      const racketWidth = 30 * p.racketSize;
+      const racketHeight = 8;
+      ctx.fillRect(15, -racketHeight / 2, racketWidth, racketHeight)
       ctx.restore()
     }
   }
@@ -305,6 +307,11 @@ export default function GameCanvas({
       if (e.key === 's' || e.key === 'ArrowDown') socketManager.setKeys({ down: true })
       if (e.key === 'a' || e.key === 'ArrowLeft') socketManager.setKeys({ left: true })
       if (e.key === 'd' || e.key === 'ArrowRight') socketManager.setKeys({ right: true })
+
+      if (e.key === '1') socketManager.upgrade(1)
+      if (e.key === '2') socketManager.upgrade(2)
+      if (e.key === '3') socketManager.upgrade(3)
+      if (e.key === '4') socketManager.upgrade(4)
     }
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'w' || e.key === 'ArrowUp') socketManager.setKeys({ up: false })

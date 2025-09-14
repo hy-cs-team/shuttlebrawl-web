@@ -56,6 +56,10 @@ this.instance.emit('joinGame', { nickname })
 swing(angle: number, button: number) {
 this.instance.emit('playerSwing', { angle, button })
 }
+
+upgrade(type: number) {
+this.instance.emit('playerUpgrade', { type })
+}
 }
 
 
