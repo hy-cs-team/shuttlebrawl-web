@@ -1,47 +1,71 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { socketManager } from '../lib/SocketManager'
 import type { PlayersMap, ShuttlecocksMap } from '../types/game'
 
-/** Simple clamp */
+/** Clamp a value into [min, max] */
 function clamp(v: number, min: number, max: number) {
   if (min > max) return min
   return v < min ? min : v > max ? max : v
 }
 
+/** Resize canvas to fill its parent, and scale its pixel buffer by DPR for crisp rendering. */
+function useAutoResizeCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
+    const parent = canvas?.parentElement
+    if (!canvas || !parent) return
+
+    const ro = new ResizeObserver(() => {
+      const rect = parent.getBoundingClientRect()
+      const dpr = Math.max(1, window.devicePixelRatio || 1)
+
+      // CSS size
+      canvas.style.width = `${rect.width}px`
+      canvas.style.height = `${rect.height}px`
+
+      // Backing store size (device pixels)
+      canvas.width = Math.max(1, Math.round(rect.width * dpr))
+      canvas.height = Math.max(1, Math.round(rect.height * dpr))
+    })
+
+    ro.observe(parent)
+    return () => ro.disconnect()
+  }, [])
+}
+
 /** World-aligned grid that scrolls with the camera */
 function drawGrid(
   ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
+  view: { w: number; h: number },
   camera: { x: number; y: number },
   worldSize: { w: number; h: number },
-  minor = 100,          // minor grid spacing (px in world units)
+  minor = 100,          // minor grid spacing (in world units == CSS px)
   majorEvery = 5,       // draw a thicker line every N minors (e.g. 5 => every 500)
   showLabels = true
 ) {
-  // Visible world window
+  // Visible world window (in world coords)
   const vx0 = Math.max(0, camera.x)
   const vy0 = Math.max(0, camera.y)
-  const vx1 = Math.min(worldSize.w, camera.x + canvas.width)
-  const vy1 = Math.min(worldSize.h, camera.y + canvas.height)
+  const vx1 = Math.min(worldSize.w, camera.x + view.w)
+  const vy1 = Math.min(worldSize.h, camera.y + view.h)
 
   // First grid lines to draw
   const startX = Math.floor(vx0 / minor) * minor
   const startY = Math.floor(vy0 / minor) * minor
 
-  // Optional: pixel-snapping to keep lines crisp even when camera is subpixel
+  // Pixel-snapping to keep lines crisp even when camera is subpixel
   const pixelSnapX = 0.5 - (camera.x % 1)
   const pixelSnapY = 0.5 - (camera.y % 1)
 
-  // Draw vertical lines
+  // Vertical lines
   for (let x = startX; x <= vx1; x += minor) {
-    const idx = Math.round(x / minor) // which minor line index
+    const idx = Math.round(x / minor)
     const isMajor = idx % majorEvery === 0
 
     ctx.beginPath()
     ctx.lineWidth = isMajor ? 1.5 : 1
     ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)'
-    // We are already in world coordinates (camera translated outside), so add snap offset
     const sx = x + pixelSnapX
     ctx.moveTo(sx, vy0)
     ctx.lineTo(sx, vy1)
@@ -52,13 +76,12 @@ function drawGrid(
       ctx.font = '10px monospace'
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
-      // label at top inside the view if possible
       const labelY = Math.max(vy0 + 4, 4)
       ctx.fillText(`x=${x}`, x + 4, labelY)
     }
   }
 
-  // Draw horizontal lines
+  // Horizontal lines
   for (let y = startY; y <= vy1; y += minor) {
     const idy = Math.round(y / minor)
     const isMajor = idy % majorEvery === 0
@@ -82,10 +105,10 @@ function drawGrid(
   }
 }
 
-/** Draw everything in world space (camera transform applied outside) */
+/** Draw everything in world space (camera transform applied inside) */
 function drawScene(
   ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
+  view: { w: number; h: number }, // viewport size in CSS pixels
   players: PlayersMap,
   shuttlecocks: ShuttlecocksMap,
   myId: string,
@@ -93,19 +116,19 @@ function drawScene(
   camera: { x: number; y: number },
   worldSize: { w: number; h: number }
 ) {
-  // Clear + solid bg
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  // Clear + solid bg (CSS pixel space)
+  ctx.clearRect(0, 0, view.w, view.h)
   ctx.fillStyle = '#0d0d0d'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillRect(0, 0, view.w, view.h)
 
-  // Camera -> world transform
+  // World transform
   ctx.save()
   ctx.translate(-camera.x, -camera.y)
 
   // 1) Grid behind everything
-  drawGrid(ctx, canvas, camera, worldSize, 100, 5, true)
+  drawGrid(ctx, view, camera, worldSize, 100, 5, true)
 
-  // 2) World bounds (see the edge of the map)
+  // 2) World bounds
   ctx.strokeStyle = '#1f2937'
   ctx.lineWidth = 4
   ctx.strokeRect(0, 0, worldSize.w, worldSize.h)
@@ -152,7 +175,7 @@ function drawScene(
       ctx.fillText(p.nickname, p.x, p.y - 40)
     }
 
-    // Racket (aim at world mouse for me)
+    // Racket
     let racketAngle: number | null = null
     if (p.isSwinging) {
       racketAngle = p.swingAngle ?? null
@@ -164,14 +187,14 @@ function drawScene(
       ctx.translate(p.x, p.y)
       ctx.rotate(racketAngle)
       ctx.fillStyle = 'white'
-      const racketWidth = 30 * p.racketSize;
-      const racketHeight = 8;
+      const racketWidth = ((p as any).racketSize ?? 1) * 30
+      const racketHeight = 8
       ctx.fillRect(15, -racketHeight / 2, racketWidth, racketHeight)
       ctx.restore()
     }
   }
 
-  // 4) Shuttlecocks (ownerColor > owner's color > white)
+  // 4) Shuttlecocks (ownerColor > owner's color > white if you keep ownerColor)
   for (const key in shuttlecocks) {
     const sc = shuttlecocks[key]
     const scColor =
@@ -188,19 +211,18 @@ function drawScene(
 }
 
 export default function GameCanvas({
-  width = 1600,
-  height = 900,
   worldWidth = 3000,
   worldHeight = 3000,
 }: {
-  width?: number
-  height?: number
   worldWidth?: number
   worldHeight?: number
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  // Mouse in SCREEN space (relative to canvas element)
+  // Make canvas fill its parent and scale by DPR
+  useAutoResizeCanvas(canvasRef)
+
+  // Mouse in SCREEN space (CSS pixels)
   const screenMouseRef = useRef({ x: 0, y: 0 })
   // Camera top-left in WORLD space
   const camRef = useRef({ x: 0, y: 0 })
@@ -220,16 +242,24 @@ export default function GameCanvas({
     const worldSize = { w: worldWidth, h: worldHeight }
 
     const render = () => {
+      // Current DPR & virtual viewport size (CSS pixels)
+      const dpr = Math.max(1, window.devicePixelRatio || 1)
+      const viewW = canvas.width / dpr
+      const viewH = canvas.height / dpr
+
+      // Always draw in CSS pixels
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
       const me = players[myId]
 
-      // Keep me centered (clamped to world)
+      // Keep me centered (clamped to world) using viewW/viewH
       let targetX = camRef.current.x
       let targetY = camRef.current.y
       if (me) {
-        const halfW = canvas.width / 2
-        const halfH = canvas.height / 2
-        const maxCamX = Math.max(0, worldSize.w - canvas.width)
-        const maxCamY = Math.max(0, worldSize.h - canvas.height)
+        const halfW = viewW / 2
+        const halfH = viewH / 2
+        const maxCamX = Math.max(0, worldSize.w - viewW)
+        const maxCamY = Math.max(0, worldSize.h - viewH)
         targetX = clamp(me.x - halfW, 0, maxCamX)
         targetY = clamp(me.y - halfH, 0, maxCamY)
       }
@@ -248,7 +278,7 @@ export default function GameCanvas({
       // Draw
       drawScene(
         ctx,
-        canvas,
+        { w: viewW, h: viewH },
         players,
         shuttlecocks,
         myId,
@@ -266,7 +296,7 @@ export default function GameCanvas({
     }
   }, [myId, players, shuttlecocks, worldWidth, worldHeight])
 
-  // Mouse events (store in screen space)
+  // Mouse events (screen space = CSS pixels)
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -281,7 +311,6 @@ export default function GameCanvas({
     }
     canvas.addEventListener('mousemove', onMouseMove)
 
-    // Swing: compute angle in WORLD space
     const onMouseDown = (e: MouseEvent) => {
       e.preventDefault()
       const me = (players as PlayersMap)[myId]
@@ -332,9 +361,7 @@ export default function GameCanvas({
   return (
     <canvas
       ref={canvasRef}
-      width={width}
-      height={height}
-      className="bg-[#0d0d0d] border-2 border-cyan-400"
+      className="block w-full h-full bg-[#0d0d0d] border-2 border-cyan-400"
     />
   )
 }

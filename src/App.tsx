@@ -12,30 +12,17 @@ export default function App() {
   const applyGameState = useGameStore(s => s.applyGameState);
   const setMyId = useGameStore(s => s.setMyId);
 
-
   useEffect(() => {
-    // Connect once on mount and register handlers
     const socket = socketManager.connect();
 
-
-    const onConnect = () => {
-      setMyId(socket.id!);
-      // Optional: console.info('connected as', socket.id)
-    };
-    const onGameState = (state: any) => {
-      // console.log(state);
-      applyGameState(state);
-    };
-
+    const onConnect = () => setMyId(socket.id!);
+    const onGameState = (state: any) => applyGameState(state);
 
     socket.on('connect', onConnect);
     socket.on('gameState', onGameState);
 
-
-    // Optional
     socket.on('playerJoined', (p: any) => console.info('[playerJoined]', p));
     socket.on('playerLeft', (d: any) => console.info('[playerLeft]', d));
-
 
     return () => {
       socket.off('connect', onConnect);
@@ -43,11 +30,11 @@ export default function App() {
     };
   }, [applyGameState, setMyId]);
 
-
   return (
     <div className="w-screen h-screen bg-[#0d0d0d] text-white flex items-center justify-center overflow-hidden">
-      <div className="relative shadow-[0_0_20px_rgba(0,255,255,0.5)]">
-        <GameCanvas width={1600} height={900} />
+      {/* Make the inner wrapper also full-screen so the canvas can fill it */}
+      <div className="relative w-screen h-screen shadow-[0_0_20px_rgba(0,255,255,0.5)]">
+        <GameCanvas /> {/* fills parent via ResizeObserver + CSS */}
         {joined && (
           <>
             <Minimap />
