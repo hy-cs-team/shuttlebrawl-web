@@ -10,7 +10,7 @@ on:
 
 # 워크플로우 실행에 필요한 권한을 설정합니다.
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
