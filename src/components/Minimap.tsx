@@ -14,7 +14,7 @@ function Minimap() {
 
   return (
     <div
-      className='absolute top-4 right-4 bg-black/60 border-2 border-cyan-400/50 rounded-sm shadow-lg'
+      className='absolute top-4 right-4 bg-black/60 border-2 border-cyan-400/50 rounded-sm shadow-lg pointer-events-none'
       style={{ width: minimapWidth, height: minimapHeight }}
     >
       {/* Players */}

@@ -20,7 +20,7 @@ const UpgradeButton = ({
         onClick={onUpgrade}
         disabled={disabled}
         className={`
-          font-bold py-2 px-4 rounded w-32 text-left transition-all duration-200
+          pointer-events-auto font-bold py-2 px-4 rounded w-32 text-left transition-all duration-200
           ${disabled 
             ? 'bg-gray-900 text-gray-500 cursor-not-allowed border border-gray-700' 
             : 'bg-gray-800 hover:bg-gray-700 text-white hover:border-cyan-400/50 border border-gray-600'
@@ -52,7 +52,7 @@ export default function UpgradeUI() {
   const canUpgrade = stats > 0
 
   return (
-    <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
+    <div className="absolute bottom-4 left-4 flex flex-col space-y-2 pointer-events-none">
       {/* 스킬 포인트 표시 */}
       <div className="bg-[rgba(3,9,14,0.85)] backdrop-blur border border-cyan-400/40 rounded-lg px-3 py-2 mb-2
                       shadow-[0_0_15px_rgba(0,255,255,0.1)]">

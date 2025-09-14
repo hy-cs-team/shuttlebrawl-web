@@ -59,7 +59,7 @@ export default function ExpHUD() {
   const { level, currentExp, requiredExp, remaining, progress } = expData
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40
+    <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 z-40
                     w-[420px] max-w-[92vw] rounded-xl border border-cyan-400/40
                     bg-[rgba(3,9,14,0.75)] backdrop-blur px-4 py-3
                     shadow-[0_0_20px_rgba(0,255,255,0.15)]">
@@ -82,7 +82,7 @@ export default function ExpHUD() {
         </div>
         {remaining && (
           <span className="text-xs text-slate-400">
-            남은 EXP: {remaining.toLocaleString()}
+            Remain EXP: {remaining.toLocaleString()}
           </span>
         )}
       </div>
