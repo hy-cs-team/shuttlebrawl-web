@@ -352,6 +352,7 @@ export default function GameCanvas({
       if (e.key === '2') socketManager.upgrade(2)
       if (e.key === '3') socketManager.upgrade(3)
       if (e.key === '4') socketManager.upgrade(4)
+      if (e.key === '0') socketManager.upgrade(0)
     }
     const onKeyUp = (e: KeyboardEvent) => {
       if (paused) return
