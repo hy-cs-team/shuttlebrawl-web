@@ -1,6 +1,8 @@
 import { useRef } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { socketManager } from '../lib/SocketManager'
+import AdPlaceholder from './ads/AdPlaceholder'
+// import AdsenseBox from './AdsenseBox'
 
 export default function JoinUI() {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -47,6 +49,11 @@ export default function JoinUI() {
         >
           게임 참가
         </button>
+        <AdPlaceholder size='320x100' />
+        {/* <AdsenseBox
+          slot="2345678901"
+          style={{ minHeight: 100, maxWidth: 320, margin: "0 auto" }}
+        /> */}
       </div>
     </div>
   )

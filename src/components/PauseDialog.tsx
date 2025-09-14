@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import AdPlaceholder from './ads/AdPlaceholder'
 
 type Props = {
   open: boolean
@@ -42,7 +43,7 @@ export default function PauseDialog({ open, onResume, onExit }: Props) {
           Do you want to exit to the main screen or resume the game?
         </p>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 mb-4">
           <button
             ref={resumeBtnRef}
             onClick={onResume}
@@ -57,6 +58,7 @@ export default function PauseDialog({ open, onResume, onExit }: Props) {
             Exit to Main
           </button>
         </div>
+        <AdPlaceholder size='320x100' />
       </div>
     </div>
   )
