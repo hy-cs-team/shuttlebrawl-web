@@ -7,6 +7,7 @@ import Minimap from './components/Minimap'
 import PlayerList from './components/PlayerList'
 import UpgradeUI from './components/UpgradeUI'
 import PauseDialog from './components/PauseDialog'
+import ExpHUD from './components/ExpHUD'
 
 export default function App() {
   const joined = useGameStore((s) => s.joined)
@@ -102,6 +103,7 @@ export default function App() {
             <Minimap />
             <PlayerList />
             <UpgradeUI />
+            <ExpHUD />
           </>
         )}
         {!joined && <JoinUI />}
