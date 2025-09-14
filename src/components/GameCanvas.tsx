@@ -221,80 +221,88 @@ export default function GameCanvas({
 
   // Make canvas fill its parent and scale by DPR
   useAutoResizeCanvas(canvasRef)
-
   // Mouse in SCREEN space (CSS pixels)
   const screenMouseRef = useRef({ x: 0, y: 0 })
   // Camera top-left in WORLD space
   const camRef = useRef({ x: 0, y: 0 })
   const animationFrameRef = useRef<number>(0)
+  const hadMeRef = useRef(false)
 
   const myId = useGameStore((s) => s.myId)
   const players = useGameStore((s) => s.players)
   const shuttlecocks = useGameStore((s) => s.shuttlecocks)
-
+  const paused = useGameStore((s) => s.paused)
   // Render loop + camera follow
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+useEffect(() => {
+  const canvas = canvasRef.current
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
 
-    const worldSize = { w: worldWidth, h: worldHeight }
+  const worldSize = { w: worldWidth, h: worldHeight }
 
-    const render = () => {
-      // Current DPR & virtual viewport size (CSS pixels)
-      const dpr = Math.max(1, window.devicePixelRatio || 1)
-      const viewW = canvas.width / dpr
-      const viewH = canvas.height / dpr
+  const render = () => {
+    const dpr = Math.max(1, window.devicePixelRatio || 1)
+    const viewW = canvas.width / dpr
+    const viewH = canvas.height / dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-      // Always draw in CSS pixels
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    const me = players[myId]
 
-      const me = players[myId]
-
-      // Keep me centered (clamped to world) using viewW/viewH
-      let targetX = camRef.current.x
-      let targetY = camRef.current.y
-      if (me) {
-        const halfW = viewW / 2
-        const halfH = viewH / 2
-        const maxCamX = Math.max(0, worldSize.w - viewW)
-        const maxCamY = Math.max(0, worldSize.h - viewH)
-        targetX = clamp(me.x - halfW, 0, maxCamX)
-        targetY = clamp(me.y - halfH, 0, maxCamY)
-      }
-
-      // Smooth follow
-      const SMOOTH = 0.2
-      camRef.current.x += (targetX - camRef.current.x) * SMOOTH
-      camRef.current.y += (targetY - camRef.current.y) * SMOOTH
-
-      // Convert mouse to WORLD
-      const worldMouse = {
-        x: screenMouseRef.current.x + camRef.current.x,
-        y: screenMouseRef.current.y + camRef.current.y,
-      }
-
-      // Draw
-      drawScene(
-        ctx,
-        { w: viewW, h: viewH },
-        players,
-        shuttlecocks,
-        myId,
-        worldMouse,
-        camRef.current,
-        worldSize
-      )
-
-      animationFrameRef.current = requestAnimationFrame(render)
+    // ⬇️ 최초로 me가 생기는 순간 즉시 스냅
+    if (me && !hadMeRef.current) {
+      const halfW = viewW / 2
+      const halfH = viewH / 2
+      const maxCamX = Math.max(0, worldSize.w - viewW)
+      const maxCamY = Math.max(0, worldSize.h - viewH)
+      camRef.current.x = clamp(me.x - halfW, 0, maxCamX)
+      camRef.current.y = clamp(me.y - halfH, 0, maxCamY)
+      hadMeRef.current = true
+    }
+    if (!me && hadMeRef.current) {
+      // 나갔거나 아직 안들어온 상태면 다음에 다시 스냅할 수 있도록 리셋
+      hadMeRef.current = false
     }
 
-    render()
-    return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+    // 기존 부드러운 추적
+    let targetX = camRef.current.x
+    let targetY = camRef.current.y
+    if (me) {
+      const halfW = viewW / 2
+      const halfH = viewH / 2
+      const maxCamX = Math.max(0, worldSize.w - viewW)
+      const maxCamY = Math.max(0, worldSize.h - viewH)
+      targetX = clamp(me.x - halfW, 0, maxCamX)
+      targetY = clamp(me.y - halfH, 0, maxCamY)
     }
-  }, [myId, players, shuttlecocks, worldWidth, worldHeight])
+    const SMOOTH = 0.2
+    camRef.current.x += (targetX - camRef.current.x) * SMOOTH
+    camRef.current.y += (targetY - camRef.current.y) * SMOOTH
+
+    const worldMouse = {
+      x: screenMouseRef.current.x + camRef.current.x,
+      y: screenMouseRef.current.y + camRef.current.y,
+    }
+
+    drawScene(
+      ctx,
+      { w: viewW, h: viewH },
+      players,
+      shuttlecocks,
+      myId,
+      worldMouse,
+      camRef.current,
+      worldSize
+    )
+
+    animationFrameRef.current = requestAnimationFrame(render)
+  }
+
+  render()
+  return () => {
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+  }
+}, [myId, players, shuttlecocks, worldWidth, worldHeight])
 
   // Mouse events (screen space = CSS pixels)
   useEffect(() => {
@@ -305,6 +313,7 @@ export default function GameCanvas({
     canvas.addEventListener('contextmenu', onCtxMenu)
 
     const onMouseMove = (e: MouseEvent) => {
+      if (paused) return
       const rect = canvas.getBoundingClientRect()
       screenMouseRef.current.x = e.clientX - rect.left
       screenMouseRef.current.y = e.clientY - rect.top
@@ -312,6 +321,7 @@ export default function GameCanvas({
     canvas.addEventListener('mousemove', onMouseMove)
 
     const onMouseDown = (e: MouseEvent) => {
+      if (paused) return
       e.preventDefault()
       const me = (players as PlayersMap)[myId]
       if (!me) return
@@ -327,11 +337,12 @@ export default function GameCanvas({
       canvas.removeEventListener('mousemove', onMouseMove)
       canvas.removeEventListener('mousedown', onMouseDown)
     }
-  }, [myId, players])
+  }, [myId, players, paused])
 
   // Keyboard
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (paused) return
       if (e.key === 'w' || e.key === 'ArrowUp') socketManager.setKeys({ up: true })
       if (e.key === 's' || e.key === 'ArrowDown') socketManager.setKeys({ down: true })
       if (e.key === 'a' || e.key === 'ArrowLeft') socketManager.setKeys({ left: true })
@@ -343,6 +354,7 @@ export default function GameCanvas({
       if (e.key === '4') socketManager.upgrade(4)
     }
     const onKeyUp = (e: KeyboardEvent) => {
+      if (paused) return
       if (e.key === 'w' || e.key === 'ArrowUp') socketManager.setKeys({ up: false })
       if (e.key === 's' || e.key === 'ArrowDown') socketManager.setKeys({ down: false })
       if (e.key === 'a' || e.key === 'ArrowLeft') socketManager.setKeys({ left: false })
@@ -356,7 +368,7 @@ export default function GameCanvas({
       window.removeEventListener('keyup', onKeyUp)
       socketManager.stopMovementLoop()
     }
-  }, [])
+  }, [paused])
 
   return (
     <canvas

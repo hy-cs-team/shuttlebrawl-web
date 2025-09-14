@@ -1,0 +1,63 @@
+import { useEffect, useRef } from 'react'
+
+type Props = {
+  open: boolean
+  onResume: () => void
+  onExit: () => void
+}
+
+export default function PauseDialog({ open, onResume, onExit }: Props) {
+  const resumeBtnRef = useRef<HTMLButtonElement | null>(null)
+
+  // Focus the "Resume" button when dialog opens
+  useEffect(() => {
+    if (open) {
+      const t = setTimeout(() => resumeBtnRef.current?.focus(), 0)
+      return () => clearTimeout(t)
+    }
+  }, [open])
+
+  // Keyboard shortcuts while dialog is open
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') onResume()
+      if (e.key === 'Escape') onResume()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open, onResume])
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      {/* Panel */}
+      <div className="relative z-10 w-[420px] max-w-[92vw] rounded-2xl border border-cyan-400/40 bg-[#0b0f12] p-6 shadow-[0_0_30px_rgba(0,255,255,0.25)]">
+        <h2 className="text-xl font-semibold text-cyan-300 mb-2">Paused</h2>
+        <p className="text-sm text-slate-300 mb-6">
+          Do you want to exit to the main screen or resume the game?
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            ref={resumeBtnRef}
+            onClick={onResume}
+            className="flex-1 rounded-lg border border-cyan-400/50 px-4 py-2 text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring focus:ring-cyan-400/40"
+          >
+            Resume
+          </button>
+          <button
+            onClick={onExit}
+            className="flex-1 rounded-lg bg-rose-600/90 px-4 py-2 text-white hover:bg-rose-600 focus:outline-none focus:ring focus:ring-rose-500/50"
+          >
+            Exit to Main
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
