@@ -1,13 +1,14 @@
 import { useGameStore } from '../store/gameStore'
 import { socketManager } from '../lib/SocketManager'
+import { useEffect } from 'react'
 
-const UpgradeButton = ({ 
-  name, 
-  level, 
-  shortcut, 
-  onUpgrade, 
-  disabled 
-}: { 
+const UpgradeButton = ({
+  name,
+  level,
+  shortcut,
+  onUpgrade,
+  disabled
+}: {
   name: string
   level: string
   shortcut: string
@@ -21,8 +22,8 @@ const UpgradeButton = ({
         disabled={disabled}
         className={`
           pointer-events-auto font-bold py-2 px-4 rounded w-32 text-left transition-all duration-200
-          ${disabled 
-            ? 'bg-gray-900 text-gray-500 cursor-not-allowed border border-gray-700' 
+          ${disabled
+            ? 'bg-gray-900 text-gray-500 cursor-not-allowed border border-gray-700'
             : 'bg-gray-800 hover:bg-gray-700 text-white hover:border-cyan-400/50 border border-gray-600'
           }
         `}
@@ -40,15 +41,39 @@ const UpgradeButton = ({
 export default function UpgradeUI() {
   const myId = useGameStore((s) => s.myId)
   const player = useGameStore((s) => s.players[myId])
-  
+  // Prevent context menu and drag events during gameplay
+  useEffect(() => {
+    const preventContextMenu = (e: MouseEvent) => {
+      e.preventDefault()
+    }
+
+    const preventDragStart = (e: DragEvent) => {
+      e.preventDefault()
+    }
+
+    const preventSelectStart = (e: Event) => {
+      e.preventDefault()
+    }
+
+    // 게임 중일 때만 이벤트들을 막음
+    document.addEventListener('contextmenu', preventContextMenu)
+    document.addEventListener('dragstart', preventDragStart)
+    document.addEventListener('selectstart', preventSelectStart)
+
+    return () => {
+      document.removeEventListener('contextmenu', preventContextMenu)
+      document.removeEventListener('dragstart', preventDragStart)
+      document.removeEventListener('selectstart', preventSelectStart)
+    }
+  }, [])
   if (!player) return null
-  
+
   const rs = typeof player.racketSize === 'number' ? player.racketSize : 1
   const ms = typeof player.moveSpeed === 'number' ? player.moveSpeed : 1
   const ss = typeof player.swingSpeed === 'number' ? player.swingSpeed : 1
   const sp = typeof player.swingPower === 'number' ? player.swingPower : 1
   const stats = typeof player.stats === 'number' ? player.stats : 0
-  
+
   const canUpgrade = stats > 0
 
   return (

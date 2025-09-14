@@ -54,40 +54,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [joined, pauseReason, togglePause])
 
-  // Prevent context menu and drag events during gameplay
-  useEffect(() => {
-    const preventContextMenu = (e: MouseEvent) => {
-      if (joined) {
-        e.preventDefault()
-      }
-    }
-
-    const preventDragStart = (e: DragEvent) => {
-      if (joined) {
-        e.preventDefault()
-      }
-    }
-
-    const preventSelectStart = (e: Event) => {
-      if (joined) {
-        e.preventDefault()
-      }
-    }
-
-    // 게임 중일 때만 이벤트들을 막음
-    if (joined) {
-      document.addEventListener('contextmenu', preventContextMenu)
-      document.addEventListener('dragstart', preventDragStart)
-      document.addEventListener('selectstart', preventSelectStart)
-    }
-
-    return () => {
-      document.removeEventListener('contextmenu', preventContextMenu)
-      document.removeEventListener('dragstart', preventDragStart)
-      document.removeEventListener('selectstart', preventSelectStart)
-    }
-  }, [joined])
-
   // Start/stop movement emit loop based on joined/paused
   useEffect(() => {
     if (!joined) {
