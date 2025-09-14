@@ -233,76 +233,76 @@ export default function GameCanvas({
   const shuttlecocks = useGameStore((s) => s.shuttlecocks)
   const paused = useGameStore((s) => s.paused)
   // Render loop + camera follow
-useEffect(() => {
-  const canvas = canvasRef.current
-  if (!canvas) return
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-  const worldSize = { w: worldWidth, h: worldHeight }
+    const worldSize = { w: worldWidth, h: worldHeight }
 
-  const render = () => {
-    const dpr = Math.max(1, window.devicePixelRatio || 1)
-    const viewW = canvas.width / dpr
-    const viewH = canvas.height / dpr
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    const render = () => {
+      const dpr = Math.max(1, window.devicePixelRatio || 1)
+      const viewW = canvas.width / dpr
+      const viewH = canvas.height / dpr
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-    const me = players[myId]
+      const me = players[myId]
 
-    // ⬇️ 최초로 me가 생기는 순간 즉시 스냅
-    if (me && !hadMeRef.current) {
-      const halfW = viewW / 2
-      const halfH = viewH / 2
-      const maxCamX = Math.max(0, worldSize.w - viewW)
-      const maxCamY = Math.max(0, worldSize.h - viewH)
-      camRef.current.x = clamp(me.x - halfW, 0, maxCamX)
-      camRef.current.y = clamp(me.y - halfH, 0, maxCamY)
-      hadMeRef.current = true
+      // ⬇️ 최초로 me가 생기는 순간 즉시 스냅
+      if (me && !hadMeRef.current) {
+        const halfW = viewW / 2
+        const halfH = viewH / 2
+        const maxCamX = Math.max(0, worldSize.w - viewW)
+        const maxCamY = Math.max(0, worldSize.h - viewH)
+        camRef.current.x = clamp(me.x - halfW, 0, maxCamX)
+        camRef.current.y = clamp(me.y - halfH, 0, maxCamY)
+        hadMeRef.current = true
+      }
+      if (!me && hadMeRef.current) {
+        // 나갔거나 아직 안들어온 상태면 다음에 다시 스냅할 수 있도록 리셋
+        hadMeRef.current = false
+      }
+
+      // 기존 부드러운 추적
+      let targetX = camRef.current.x
+      let targetY = camRef.current.y
+      if (me) {
+        const halfW = viewW / 2
+        const halfH = viewH / 2
+        const maxCamX = Math.max(0, worldSize.w - viewW)
+        const maxCamY = Math.max(0, worldSize.h - viewH)
+        targetX = clamp(me.x - halfW, 0, maxCamX)
+        targetY = clamp(me.y - halfH, 0, maxCamY)
+      }
+      const SMOOTH = 0.2
+      camRef.current.x += (targetX - camRef.current.x) * SMOOTH
+      camRef.current.y += (targetY - camRef.current.y) * SMOOTH
+
+      const worldMouse = {
+        x: screenMouseRef.current.x + camRef.current.x,
+        y: screenMouseRef.current.y + camRef.current.y,
+      }
+
+      drawScene(
+        ctx,
+        { w: viewW, h: viewH },
+        players,
+        shuttlecocks,
+        myId,
+        worldMouse,
+        camRef.current,
+        worldSize
+      )
+
+      animationFrameRef.current = requestAnimationFrame(render)
     }
-    if (!me && hadMeRef.current) {
-      // 나갔거나 아직 안들어온 상태면 다음에 다시 스냅할 수 있도록 리셋
-      hadMeRef.current = false
+
+    render()
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
-
-    // 기존 부드러운 추적
-    let targetX = camRef.current.x
-    let targetY = camRef.current.y
-    if (me) {
-      const halfW = viewW / 2
-      const halfH = viewH / 2
-      const maxCamX = Math.max(0, worldSize.w - viewW)
-      const maxCamY = Math.max(0, worldSize.h - viewH)
-      targetX = clamp(me.x - halfW, 0, maxCamX)
-      targetY = clamp(me.y - halfH, 0, maxCamY)
-    }
-    const SMOOTH = 0.2
-    camRef.current.x += (targetX - camRef.current.x) * SMOOTH
-    camRef.current.y += (targetY - camRef.current.y) * SMOOTH
-
-    const worldMouse = {
-      x: screenMouseRef.current.x + camRef.current.x,
-      y: screenMouseRef.current.y + camRef.current.y,
-    }
-
-    drawScene(
-      ctx,
-      { w: viewW, h: viewH },
-      players,
-      shuttlecocks,
-      myId,
-      worldMouse,
-      camRef.current,
-      worldSize
-    )
-
-    animationFrameRef.current = requestAnimationFrame(render)
-  }
-
-  render()
-  return () => {
-    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
-  }
-}, [myId, players, shuttlecocks, worldWidth, worldHeight])
+  }, [myId, players, shuttlecocks, worldWidth, worldHeight])
 
   // Mouse events (screen space = CSS pixels)
   useEffect(() => {
