@@ -18,6 +18,7 @@ export default function App() {
   const reset = useGameStore((s) => s.reset)
 
   const applyGameState = useGameStore((s) => s.applyGameState)
+  const applyInitializeGame = useGameStore((s) => s.initializeGame)
   const setMyId = useGameStore((s) => s.setMyId)
   const myId = useGameStore((s) => s.myId)
   const myHp = useGameStore((s) => s.players[myId]?.hp)
@@ -27,12 +28,15 @@ export default function App() {
     const socket = socketManager.connect()
     const onConnect = () => setMyId(socket.id!)
     const onGameState = (state: any) => applyGameState(state)
+    const initializeGame = (state: any) => applyInitializeGame(state)
     socket.on('connect', onConnect)
     socket.on('gameState', onGameState)
+    socket.on('initializeGame', initializeGame)
     socket.on('playerJoined', (p: any) => console.info('[playerJoined]', p))
     socket.on('playerLeft', (d: any) => console.info('[playerLeft]', d))
     return () => {
       socket.off('connect', onConnect)
+      socket.off('initializeGame', initializeGame)
       socket.off('gameState', onGameState)
     }
   }, [applyGameState, setMyId])
