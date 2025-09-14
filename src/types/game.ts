@@ -17,21 +17,21 @@ export type PlayerBase = {
 };
 
 export type Player = PlayerBase &
-  Partial<{
-    exp: number;
-    level: number;
-    movement: Movement;
-    racketSize: number;
-    swingSpeed: number;
-    swingPower: number;
-    moveSpeed: number;
+{
+  exp: number;
+  level: number;
+  movement: Movement;
+  racketSize: number;
+  swingSpeed: number;
+  swingPower: number;
+  moveSpeed: number;
 
-    isSwinging: boolean;
-    swingAngle: number;
-    swingTimer: number;
-    swingDirection: number; // 1 or -1
-    stunTimer: number;
-  }> &
+  isSwinging: boolean;
+  swingAngle: number;
+  swingTimer: number;
+  swingDirection: number; // 1 or -1
+  stunTimer: number;
+} &
   Record<string, unknown>;
 
 export type Shuttlecock = {
