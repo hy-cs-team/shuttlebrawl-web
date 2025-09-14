@@ -3,13 +3,13 @@ import { useGameStore } from '../store/gameStore';
 function PlayerList() {
   const players = useGameStore((s) => s.players);
 
-  const levelOrMin = (p: any) =>
-    typeof p.level === 'number' ? p.level : Number.NEGATIVE_INFINITY;
+  const expOrMin = (p: any) =>
+    typeof p.exp === 'number' ? p.exp : Number.NEGATIVE_INFINITY;
 
   const sortedPlayers = Object.values(players).sort((a, b) => {
-    // 1) level desc
-    const byLevel = levelOrMin(b) - levelOrMin(a);
-    if (byLevel !== 0) return byLevel;
+    // 1) exp desc (경험치 많은 순)
+    const byExp = expOrMin(b) - expOrMin(a);
+    if (byExp !== 0) return byExp;
     // 2) nickname asc (fallback 안정화)
     const an = a.nickname ?? '';
     const bn = b.nickname ?? '';
