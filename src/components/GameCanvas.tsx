@@ -442,26 +442,59 @@ export default function GameCanvas({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (paused) return
-      if (e.key === 'w' || e.key === 'ArrowUp') socketManager.setKeys({ up: true })
-      if (e.key === 's' || e.key === 'ArrowDown') socketManager.setKeys({ down: true })
-      if (e.key === 'a' || e.key === 'ArrowLeft') socketManager.setKeys({ left: true })
-      if (e.key === 'd' || e.key === 'ArrowRight') socketManager.setKeys({ right: true })
 
-      if (e.key === '1') socketManager.upgrade(1)
-      if (e.key === '2') socketManager.upgrade(2)
-      if (e.key === '3') socketManager.upgrade(3)
-      if (e.key === '4') socketManager.upgrade(4)
-      if (e.key === '0') socketManager.upgrade(0)
+      // KeyboardEvent.code를 사용하여 물리적 키 위치로 판단 (언어/대소문자 무관)
+      const code = e.code.toLowerCase()
+      const key = e.key.toLowerCase()
 
-      if (e.key === ' ') socketManager.use('boost')
+      // 이동키 - WASD와 화살표키 모두 지원
+      if (code === 'keyw' || key === 'w' || e.key === 'ArrowUp' || code === 'arrowup') {
+        socketManager.setKeys({ up: true })
+      }
+      if (code === 'keys' || key === 's' || e.key === 'ArrowDown' || code === 'arrowdown') {
+        socketManager.setKeys({ down: true })
+      }
+      if (code === 'keya' || key === 'a' || e.key === 'ArrowLeft' || code === 'arrowleft') {
+        socketManager.setKeys({ left: true })
+      }
+      if (code === 'keyd' || key === 'd' || e.key === 'ArrowRight' || code === 'arrowright') {
+        socketManager.setKeys({ right: true })
+      }
+
+      // 업그레이드 키 - 숫자키는 언어와 무관
+      if (code === 'digit1' || key === '1') socketManager.upgrade(1)
+      if (code === 'digit2' || key === '2') socketManager.upgrade(2)
+      if (code === 'digit3' || key === '3') socketManager.upgrade(3)
+      if (code === 'digit4' || key === '4') socketManager.upgrade(4)
+      if (code === 'digit0' || key === '0') socketManager.upgrade(0)
+
+      // 스페이스바
+      if (code === 'space' || e.key === ' ') {
+        e.preventDefault() // 페이지 스크롤 방지
+        socketManager.use('boost')
+      }
     }
+
     const onKeyUp = (e: KeyboardEvent) => {
       if (paused) return
-      if (e.key === 'w' || e.key === 'ArrowUp') socketManager.setKeys({ up: false })
-      if (e.key === 's' || e.key === 'ArrowDown') socketManager.setKeys({ down: false })
-      if (e.key === 'a' || e.key === 'ArrowLeft') socketManager.setKeys({ left: false })
-      if (e.key === 'd' || e.key === 'ArrowRight') socketManager.setKeys({ right: false })
+
+      const code = e.code.toLowerCase()
+      const key = e.key.toLowerCase()
+
+      if (code === 'keyw' || key === 'w' || e.key === 'ArrowUp' || code === 'arrowup') {
+        socketManager.setKeys({ up: false })
+      }
+      if (code === 'keys' || key === 's' || e.key === 'ArrowDown' || code === 'arrowdown') {
+        socketManager.setKeys({ down: false })
+      }
+      if (code === 'keya' || key === 'a' || e.key === 'ArrowLeft' || code === 'arrowleft') {
+        socketManager.setKeys({ left: false })
+      }
+      if (code === 'keyd' || key === 'd' || e.key === 'ArrowRight' || code === 'arrowright') {
+        socketManager.setKeys({ right: false })
+      }
     }
+
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
 

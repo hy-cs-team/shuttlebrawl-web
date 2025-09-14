@@ -25,30 +25,37 @@ function Minimap() {
           style={{
             left: `${p.x * scaleX}px`,
             top: `${p.y * scaleY}px`,
-            width: '6px',
-            height: '6px',
+            width: '8px',
+            height: '8px',
             backgroundColor: p.color || 'white',
             transform: 'translate(-50%, -50%)',
             border: p.id === myId ? '2px solid yellow' : 'none',
+            boxShadow: p.id === myId ? '0 0 4px 1px yellow' : 'none',
             boxSizing: 'content-box',
           }}
         />
       ))}
       {/* Shuttlecocks */}
-      {Object.values(shuttlecocks).map((sc) => (
-        <div
-          key={`sc-${sc.id}`}
-          className='absolute rounded-full'
-          style={{
-            left: `${sc.x * scaleX}px`,
-            top: `${sc.y * scaleY}px`,
-            width: '4px',
-            height: '4px',
-            backgroundColor: 'white',
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
-      ))}
+      {Object.values(shuttlecocks).map((sc) => {
+        const ownerColor = sc.ownerId && players[sc.ownerId]
+          ? players[sc.ownerId].color
+          : 'white';
+
+        return (
+          <div
+            key={`sc-${sc.id}`}
+            className='absolute rounded-full'
+            style={{
+              left: `${sc.x * scaleX}px`,
+              top: `${sc.y * scaleY}px`,
+              width: '4px',
+              height: '4px',
+              backgroundColor: ownerColor,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        );
+      })}
     </div>
   );
 }

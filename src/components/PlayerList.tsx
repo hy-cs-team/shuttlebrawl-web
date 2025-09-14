@@ -17,7 +17,7 @@ function PlayerList() {
   });
 
   return (
-    <div className="pointer-events-none absolute top-[232px] right-4 bg-black/60 border-2 border-cyan-400/50 rounded-sm p-2 text-white text-sm w-60 shadow-lg">
+    <div className="pointer-events-none absolute top-[232px] right-4 bg-black/60 border-2 border-cyan-400/50 rounded-sm p-2 text-white text-sm w-50 shadow-lg">
       <h3 className="text-center font-bold text-cyan-400 mb-2">
         Players ({sortedPlayers.length})
       </h3>

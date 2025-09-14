@@ -21,19 +21,16 @@ const UpgradeButton = ({
         onClick={onUpgrade}
         disabled={disabled}
         className={`
-          pointer-events-auto font-bold py-2 px-4 rounded w-32 text-left transition-all duration-200
+          pointer-events-auto font-bold py-2 px-4 rounded min-w-[18ch] text-left transition-all duration-200
           ${disabled
             ? 'bg-gray-900 text-gray-500 cursor-not-allowed border border-gray-700'
             : 'bg-gray-800 hover:bg-gray-700 text-white hover:border-cyan-400/50 border border-gray-600'
           }
         `}
       >
-        {name}
-      </button>
-      <div className="text-sm">
+        <div className="text-gray-400">({shortcut}) {name}</div>
         <div className="text-white">Lv: {level}</div>
-        <div className="text-gray-400">({shortcut})</div>
-      </div>
+      </button>
     </div>
   )
 }
@@ -79,10 +76,10 @@ export default function UpgradeUI() {
   return (
     <div className="absolute bottom-4 left-4 flex flex-col space-y-2 pointer-events-none">
       {/* 스킬 포인트 표시 */}
-      <div className="bg-[rgba(3,9,14,0.85)] backdrop-blur border border-cyan-400/40 rounded-lg px-3 py-2 mb-2
+      <div className="min-w-[18ch] bg-[rgba(3,9,14,0.85)] backdrop-blur border border-cyan-400/40 rounded-lg px-3 py-2 mb-2
                       shadow-[0_0_15px_rgba(0,255,255,0.1)]">
         <div className="flex items-center gap-2">
-          <span className="text-cyan-200 font-semibold text-sm">Skill Points:</span>
+          <span className="text-cyan-200 font-semibold text-sm">Stats Points:</span>
           <span className={`font-bold text-lg ${stats > 0 ? 'text-cyan-400' : 'text-gray-400'}`}>
             {stats}
           </span>
