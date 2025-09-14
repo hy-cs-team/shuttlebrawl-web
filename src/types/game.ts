@@ -47,7 +47,7 @@ export type Shuttlecock = {
 export type PlayersMap = Record<string, Player>;
 export type ShuttlecocksMap = Record<string, Shuttlecock>;
 
-export type GameState = {
+export type GameStateLegacy = {
   players: PlayersMap;
   shuttlecocks: ShuttlecocksMap;
 };

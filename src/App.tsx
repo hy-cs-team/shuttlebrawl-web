@@ -15,7 +15,7 @@ export default function App() {
   const closePause = useGameStore((s) => s.closePause)
   const reset = useGameStore((s) => s.reset)
 
-  const applyGameState = useGameStore((s) => s.applyGameState)
+  const applyGameStateLegacy = useGameStore((s) => s.applyGameStateLegacy)
   const setMyId = useGameStore((s) => s.setMyId)
 
   // Socket wiring
@@ -23,18 +23,18 @@ export default function App() {
     const socket = socketManager.connect()
 
     const onConnect = () => setMyId(socket.id!)
-    const onGameState = (state: any) => applyGameState(state)
+    const onGameStateLegacy = (state: any) => applyGameStateLegacy(state)
 
     socket.on('connect', onConnect)
-    socket.on('gameState', onGameState)
+    socket.on('gameStateLegacy', onGameStateLegacy)
     socket.on('playerJoined', (p: any) => console.info('[playerJoined]', p))
     socket.on('playerLeft', (d: any) => console.info('[playerLeft]', d))
 
     return () => {
       socket.off('connect', onConnect)
-      socket.off('gameState', onGameState)
+      socket.off('gameStateLegacy', onGameStateLegacy)
     }
-  }, [applyGameState, setMyId])
+  }, [applyGameStateLegacy, setMyId])
 
   // ESC to open/close pause dialog (only when joined)
   useEffect(() => {
