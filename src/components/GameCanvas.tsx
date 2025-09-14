@@ -105,6 +105,101 @@ function drawGrid(
   }
 }
 
+/** Simple rounded-rect fill+stroke */
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r = 6
+) {
+  const rr = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + rr, y)
+  ctx.arcTo(x + w, y, x + w, y + h, rr)
+  ctx.arcTo(x + w, y + h, x, y + h, rr)
+  ctx.arcTo(x, y + h, x, y, rr)
+  ctx.arcTo(x, y, x + w, y, rr)
+  ctx.closePath()
+}
+
+/** Name + Level pill next to it (centered above player) */
+function drawNameplate(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  nickname: string,
+  level: number | undefined,
+  highlight = false
+) {
+  const nameText = nickname || '(Unknown)'
+  const lvText = `Lv ${typeof level === 'number' ? level : '?'}`
+
+  // Measure texts
+  ctx.save()
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
+
+  ctx.font = '12px sans-serif'
+  const nameW = Math.ceil(ctx.measureText(nameText).width)
+
+  ctx.font = '10px monospace'
+  const lvW = Math.ceil(ctx.measureText(lvText).width)
+
+  // Layout
+  const padX = 6
+  const padY = 4
+  const gap = 6
+
+  const nameH = 14 // approx line box for 12px
+  const badgeH = 14 // approx line box for 10px
+  const h = Math.max(nameH, badgeH) + padY * 2
+  const badgeW = lvW + padX * 2
+  const totalW = nameW + gap + badgeW
+
+  // Top-left of whole plate so that it is centered at (x, y)
+  const startX = Math.round(x - totalW / 2)
+  const startY = Math.round(y - h) // y is the bottom of the plate
+
+  // Plate background
+  ctx.fillStyle = 'rgba(0,0,0,0.55)'
+  roundRect(ctx, startX, startY, totalW, h, 8)
+  ctx.fill()
+
+  // Optional outer stroke (highlight me)
+  if (highlight) {
+    ctx.strokeStyle = '#00ffff'
+    ctx.lineWidth = 1
+    roundRect(ctx, startX + 0.5, startY + 0.5, totalW - 1, h - 1, 8)
+    ctx.stroke()
+  }
+
+  // Name (left)
+  ctx.font = '12px sans-serif'
+  ctx.fillStyle = '#ffffff'
+  const textY = startY + h / 2 + 4 // visually centered for 12px
+  ctx.fillText(nameText, startX + padX, textY)
+
+  // Level badge (right)
+  const badgeX = startX + nameW + gap
+  const badgeY = startY + (h - badgeH) / 2
+  ctx.fillStyle = 'rgba(0,255,255,0.15)'
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 7)
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(0,255,255,0.35)'
+  ctx.lineWidth = 1
+  roundRect(ctx, badgeX + 0.5, badgeY + 0.5, badgeW - 1, badgeH - 1, 7)
+  ctx.stroke()
+
+  ctx.font = '10px monospace'
+  ctx.fillStyle = '#a5f3fc'
+  const badgeTextY = badgeY + badgeH / 2 + 3
+  ctx.fillText(lvText, badgeX + padX, badgeTextY)
+
+  ctx.restore()
+}
+
 /** Draw everything in world space (camera transform applied inside) */
 function drawScene(
   ctx: CanvasRenderingContext2D,
@@ -169,10 +264,14 @@ function drawScene(
 
     // Name tag
     if (p.nickname) {
-      ctx.fillStyle = 'white'
-      ctx.font = '12px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillText(p.nickname, p.x, p.y - 40)
+      drawNameplate(
+        ctx,
+        p.x,
+        p.y - 44,                 // 라벨이 캐릭터 위에 배치되도록 오프셋
+        p.nickname,
+        (p as any).level,         // 타입에 level 있음
+        isMe                      // 내 캐릭터면 사이안 테두리 강조
+      )
     }
 
     // Racket
