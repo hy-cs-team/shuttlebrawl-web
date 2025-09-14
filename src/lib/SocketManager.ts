@@ -75,6 +75,10 @@ class SocketManager {
   upgrade(type: number) {
     this.instance.emit('playerUpgrade', { type });
   }
+
+  use(useId: string) {
+    this.instance.emit('playerUse', { useId });
+  }
 }
 
 export const socketManager = new SocketManager();
