@@ -1,33 +1,48 @@
 import { useEffect, useRef } from 'react'
 import AdPlaceholder from './ads/AdPlaceholder'
 
+type Mode = 'pause' | 'dead'
+
 type Props = {
   open: boolean
-  onResume: () => void
+  mode?: Mode // 'pause' | 'dead'
+  onResume?: () => void
   onExit: () => void
 }
 
-export default function PauseDialog({ open, onResume, onExit }: Props) {
+export default function PauseDialog({
+  open,
+  mode = 'pause',
+  onResume,
+  onExit,
+}: Props) {
   const resumeBtnRef = useRef<HTMLButtonElement | null>(null)
+  const isDead = mode === 'dead'
 
-  // Focus the "Resume" button when dialog opens
+  // Focus handling
   useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => resumeBtnRef.current?.focus(), 0)
-      return () => clearTimeout(t)
-    }
-  }, [open])
+    if (!open) return
+    const t = setTimeout(() => {
+      if (!isDead) resumeBtnRef.current?.focus()
+    }, 0)
+    return () => clearTimeout(t)
+  }, [open, isDead])
 
-  // Keyboard shortcuts while dialog is open
+  // Keyboard shortcuts when open
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') onResume()
-      if (e.key === 'Escape') onResume()
+      if (isDead) {
+        // In death mode, Enter/Escape = Exit
+        if (e.key === 'Enter' || e.key === 'Escape') onExit()
+      } else {
+        if (e.key === 'Escape') onResume?.()
+        else if (e.key === 'Enter') onExit?.()
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open, onResume])
+  }, [open, isDead, onExit, onResume])
 
   if (!open) return null
 
@@ -38,19 +53,29 @@ export default function PauseDialog({ open, onResume, onExit }: Props) {
 
       {/* Panel */}
       <div className="relative z-10 w-[420px] max-w-[92vw] rounded-2xl border border-cyan-400/40 bg-[#0b0f12] p-6 shadow-[0_0_30px_rgba(0,255,255,0.25)]">
-        <h2 className="text-xl font-semibold text-cyan-300 mb-2">Paused</h2>
+        <h2 className="text-xl font-semibold mb-2">
+          {isDead ? (
+            <span className="text-rose-300">You Died</span>
+          ) : (
+            <span className="text-cyan-300">Paused</span>
+          )}
+        </h2>
         <p className="text-sm text-slate-300 mb-6">
-          Do you want to exit to the main screen or resume the game?
+          {isDead
+            ? 'Exit to the main screen.'
+            : 'Do you want to exit to the main screen or resume the game?'}
         </p>
 
-        <div className="flex gap-3 mb-4">
-          <button
-            ref={resumeBtnRef}
-            onClick={onResume}
-            className="flex-1 rounded-lg border border-cyan-400/50 px-4 py-2 text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring focus:ring-cyan-400/40"
-          >
-            Resume
-          </button>
+        <div className="flex gap-3 mb-6">
+          {!isDead && (
+            <button
+              ref={resumeBtnRef}
+              onClick={onResume}
+              className="flex-1 rounded-lg border border-cyan-400/50 px-4 py-2 text-cyan-200 hover:bg-cyan-400/10 focus:outline-none focus:ring focus:ring-cyan-400/40"
+            >
+              Resume
+            </button>
+          )}
           <button
             onClick={onExit}
             className="flex-1 rounded-lg bg-rose-600/90 px-4 py-2 text-white hover:bg-rose-600 focus:outline-none focus:ring focus:ring-rose-500/50"

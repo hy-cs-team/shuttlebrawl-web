@@ -62,3 +62,5 @@ export type MovementKeys = {
   left: boolean;
   right: boolean;
 };
+
+export type PauseReason = 'pause' | 'dead'
