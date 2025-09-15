@@ -16,7 +16,7 @@ permissions:
 
 # 동시 배포를 하나로 제한합니다.
 concurrency:
-  group: 'pages'
+  group: "pages"
   cancel-in-progress: true
 
 jobs:

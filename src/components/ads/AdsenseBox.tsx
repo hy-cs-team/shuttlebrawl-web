@@ -7,8 +7,8 @@ declare global {
 }
 
 type Props = {
-  slot: string;                       // data-ad-slot from AdSense UI
-  style?: React.CSSProperties;        // reserve height to avoid CLS
+  slot: string; // data-ad-slot from AdSense UI
+  style?: React.CSSProperties; // reserve height to avoid CLS
   format?: "auto" | "rectangle" | "horizontal" | "vertical";
   responsive?: boolean;
   className?: string;
@@ -41,7 +41,7 @@ export default function AdsenseBox({
     <ins
       className={`adsbygoogle ${className ?? ""}`}
       style={{ display: "block", ...(style ?? {}) }}
-      data-ad-client="ca-pub-2988947633391165"  // <-- your ID
+      data-ad-client="ca-pub-2988947633391165" // <-- your ID
       data-ad-slot={slot}
       data-ad-format={format}
       data-full-width-responsive={responsive ? "true" : "false"}

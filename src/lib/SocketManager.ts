@@ -1,6 +1,6 @@
-import { io, Socket } from 'socket.io-client';
-import { SERVER_URL } from '../config';
-import type { MovementKeys } from '../types/game';
+import { io, Socket } from "socket.io-client";
+import { SERVER_URL } from "../config";
+import type { MovementKeys } from "../types/game";
 
 class SocketManager {
   private socket?: Socket;
@@ -21,7 +21,7 @@ class SocketManager {
   connect() {
     if (!this.socket) {
       this.socket = io(SERVER_URL, {
-        transports: ['websocket'],
+        transports: ["websocket"],
         autoConnect: true,
       });
     }
@@ -29,7 +29,7 @@ class SocketManager {
   }
 
   get instance() {
-    if (!this.socket) throw new Error('Socket not connected yet');
+    if (!this.socket) throw new Error("Socket not connected yet");
     return this.socket;
   }
 
@@ -47,7 +47,7 @@ class SocketManager {
         this.keys.left !== this.previousKeys.left ||
         this.keys.right !== this.previousKeys.right
       ) {
-        this.instance.emit('playerMovement', this.keys);
+        this.instance.emit("playerMovement", this.keys);
         this.previousKeys = { ...this.keys };
       }
     }, 1000 / 60);
@@ -61,23 +61,23 @@ class SocketManager {
   }
 
   joinGame(nickname: string) {
-    this.instance.emit('joinGame', { nickname });
+    this.instance.emit("joinGame", { nickname });
   }
 
   leaveGame() {
-    this.socket?.emit('leaveGame');
+    this.socket?.emit("leaveGame");
   }
 
   swing(angle: number, button: number) {
-    this.instance.emit('playerSwing', { angle, button });
+    this.instance.emit("playerSwing", { angle, button });
   }
 
   upgrade(type: number) {
-    this.instance.emit('playerUpgrade', { type });
+    this.instance.emit("playerUpgrade", { type });
   }
 
   use(useId: string) {
-    this.instance.emit('playerUse', { useId });
+    this.instance.emit("playerUse", { useId });
   }
 }
 

@@ -16,8 +16,7 @@ export type PlayerBase = {
   color?: string; // server-provided player color
 };
 
-export type Player = PlayerBase &
-{
+export type Player = PlayerBase & {
   exp: number;
   requiredExp: number; // 추가: 레벨업에 필요한 총 경험치
   level: number;
@@ -35,8 +34,7 @@ export type Player = PlayerBase &
   stunTimer: number;
   knockbackVx: number; // 추가
   knockbackVy: number; // 추가
-} &
-  Record<string, unknown>;
+} & Record<string, unknown>;
 
 export type Shuttlecock = {
   id: number;
@@ -67,4 +65,4 @@ export type MovementKeys = {
   right: boolean;
 };
 
-export type PauseReason = 'pause' | 'dead'
+export type PauseReason = "pause" | "dead";
