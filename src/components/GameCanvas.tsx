@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { useGameStore } from "../store/gameStore";
 import { socketManager } from "../lib/SocketManager";
 import type { PlayersMap, ShuttlecocksMap } from "../types/game";
+import { audio } from "../lib/AudioManager";
 
 /** Clamp a value into [min, max] */
 function clamp(v: number, min: number, max: number) {
@@ -42,21 +43,18 @@ function drawGrid(
   view: { w: number; h: number },
   camera: { x: number; y: number },
   worldSize: { w: number; h: number },
-  minor = 100, // minor grid spacing (in world units == CSS px)
-  majorEvery = 5, // draw a thicker line every N minors (e.g. 5 => every 500)
+  minor = 100,
+  majorEvery = 5,
   showLabels = true
 ) {
-  // Visible world window (in world coords)
   const vx0 = Math.max(0, camera.x);
   const vy0 = Math.max(0, camera.y);
   const vx1 = Math.min(worldSize.w, camera.x + view.w);
   const vy1 = Math.min(worldSize.h, camera.y + view.h);
 
-  // First grid lines to draw
   const startX = Math.floor(vx0 / minor) * minor;
   const startY = Math.floor(vy0 / minor) * minor;
 
-  // Pixel-snapping to keep lines crisp even when camera is subpixel
   const pixelSnapX = 0.5 - (camera.x % 1);
   const pixelSnapY = 0.5 - (camera.y % 1);
 
@@ -142,7 +140,6 @@ function drawNameplate(
   const nameText = nickname || "(Unknown)";
   const lvText = `Lv ${typeof level === "number" ? level : "?"}`;
 
-  // Measure texts
   ctx.save();
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
@@ -153,27 +150,23 @@ function drawNameplate(
   ctx.font = "10px monospace";
   const lvW = Math.ceil(ctx.measureText(lvText).width);
 
-  // Layout
   const padX = 6;
   const padY = 4;
   const gap = 6;
 
-  const nameH = 14; // approx line box for 12px
-  const badgeH = 14; // approx line box for 10px
+  const nameH = 14;
+  const badgeH = 14;
   const h = Math.max(nameH, badgeH) + padY * 2;
   const badgeW = lvW + padX * 2;
   const totalW = nameW + gap + badgeW;
 
-  // Top-left of whole plate so that it is centered at (x, y)
   const startX = Math.round(x - totalW / 2);
-  const startY = Math.round(y - h); // y is the bottom of the plate
+  const startY = Math.round(y - h);
 
-  // Plate background
   ctx.fillStyle = "rgba(0,0,0,0.55)";
   roundRect(ctx, startX, startY, totalW, h, 8);
   ctx.fill();
 
-  // Optional outer stroke (highlight me)
   if (highlight) {
     ctx.strokeStyle = "#00ffff";
     ctx.lineWidth = 1;
@@ -181,13 +174,11 @@ function drawNameplate(
     ctx.stroke();
   }
 
-  // Name (left)
   ctx.font = "12px sans-serif";
   ctx.fillStyle = "#ffffff";
-  const textY = startY + h / 2 + 4; // visually centered for 12px
+  const textY = startY + h / 2 + 4;
   ctx.fillText(nameText, startX + padX, textY);
 
-  // Level badge (right)
   const badgeX = startX + nameW + gap;
   const badgeY = startY + (h - badgeH) / 2;
   ctx.fillStyle = "rgba(0,255,255,0.15)";
@@ -209,7 +200,7 @@ function drawNameplate(
 /** Draw everything in world space (camera transform applied inside) */
 function drawScene(
   ctx: CanvasRenderingContext2D,
-  view: { w: number; h: number }, // viewport size in CSS pixels
+  view: { w: number; h: number },
   players: PlayersMap,
   shuttlecocks: ShuttlecocksMap,
   myId: string,
@@ -217,24 +208,20 @@ function drawScene(
   camera: { x: number; y: number },
   worldSize: { w: number; h: number }
 ) {
-  // Clear + solid bg (CSS pixel space)
   ctx.clearRect(0, 0, view.w, view.h);
   ctx.fillStyle = "#0d0d0d";
   ctx.fillRect(0, 0, view.w, view.h);
 
-  // World transform
   ctx.save();
   ctx.translate(-camera.x, -camera.y);
 
-  // 1) Grid behind everything
   drawGrid(ctx, view, camera, worldSize, 100, 5, true);
 
-  // 2) World bounds
   ctx.strokeStyle = "#1f2937";
   ctx.lineWidth = 4;
   ctx.strokeRect(0, 0, worldSize.w, worldSize.h);
 
-  // 3) Players
+  // Players
   for (const id in players) {
     const p = players[id];
     const isMe = id === myId;
@@ -248,14 +235,13 @@ function drawScene(
     const pct = Math.max(0, Math.min(1, p.hp / (p.maxHp || 1)));
     ctx.fillRect(p.x - hpBarWidth / 2, p.y - 30, hpBarWidth * pct, hpBarHeight);
 
-    // Body (server-driven color; keep fallback)
+    // Body
     const bodyColor = p.color ?? (isMe ? "#00ffff" : "#ff00ff");
     ctx.fillStyle = bodyColor;
     ctx.beginPath();
     ctx.arc(p.x, p.y, 15, 0, Math.PI * 2);
     ctx.fill();
 
-    // Highlight "me"
     if (isMe) {
       ctx.save();
       ctx.lineWidth = 3;
@@ -273,10 +259,10 @@ function drawScene(
       drawNameplate(
         ctx,
         p.x,
-        p.y - 44, // 라벨이 캐릭터 위에 배치되도록 오프셋
+        p.y - 44,
         p.nickname,
-        (p as any).level, // 타입에 level 있음
-        isMe // 내 캐릭터면 사이안 테두리 강조
+        (p as any).level,
+        isMe
       );
     }
 
@@ -299,7 +285,7 @@ function drawScene(
     }
   }
 
-  // 4) Shuttlecocks (ownerColor > owner's color > white if you keep ownerColor)
+  // Shuttlecocks
   for (const key in shuttlecocks) {
     const sc = shuttlecocks[key];
     const scColor =
@@ -323,11 +309,9 @@ export default function GameCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Make canvas fill its parent and scale by DPR
   useAutoResizeCanvas(canvasRef);
-  // Mouse in SCREEN space (CSS pixels)
+  
   const screenMouseRef = useRef({ x: 0, y: 0 });
-  // Camera top-left in WORLD space
   const camRef = useRef({ x: 0, y: 0 });
   const animationFrameRef = useRef<number>(0);
   const hadMeRef = useRef(false);
@@ -336,6 +320,38 @@ export default function GameCanvas({
   const players = useGameStore(s => s.players);
   const shuttlecocks = useGameStore(s => s.shuttlecocks);
   const paused = useGameStore(s => s.paused);
+
+  // 이전 상태 추적 (공 타격 감지용)
+  const prevShuttlecocksRef = useRef<ShuttlecocksMap>({});
+
+  // 공 타격 감지 및 효과음 재생
+  useEffect(() => {
+    if (!audio.isUnlocked()) return;
+
+    const currentShuttlecocks = shuttlecocks;
+    const prevShuttlecocks = prevShuttlecocksRef.current;
+
+    // 공의 소유자 변경 감지 (공이 타격당한 경우)
+    for (const key in currentShuttlecocks) {
+      const currentSC = currentShuttlecocks[key];
+      const prevSC = prevShuttlecocks[key];
+      
+      if (currentSC.ownerId && (!prevSC || prevSC.ownerId !== currentSC.ownerId)) {
+       // 공 타격 효과음 재생
+        const volume = currentSC.ownerId === myId ? 0.8 : 0.5;
+        const pitch = 0.9 + Math.random() * 0.2;
+        audio.playSFX("sfx_hit", { 
+          volume: volume, // volume 변수 사용
+          playbackRate: pitch, 
+          throttleMs: 50 
+        });
+      }
+    }
+
+    // 상태 업데이트
+    prevShuttlecocksRef.current = { ...currentShuttlecocks };
+  }, [shuttlecocks, myId]);
+
   // Render loop + camera follow
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -353,7 +369,7 @@ export default function GameCanvas({
 
       const me = players[myId];
 
-      // ⬇️ 최초로 me가 생기는 순간 즉시 스냅
+      // 최초로 me가 생기는 순간 즉시 스냅
       if (me && !hadMeRef.current) {
         const halfW = viewW / 2;
         const halfH = viewH / 2;
@@ -364,7 +380,6 @@ export default function GameCanvas({
         hadMeRef.current = true;
       }
       if (!me && hadMeRef.current) {
-        // 나갔거나 아직 안들어온 상태면 다음에 다시 스냅할 수 있도록 리셋
         hadMeRef.current = false;
       }
 
@@ -409,7 +424,7 @@ export default function GameCanvas({
     };
   }, [myId, players, shuttlecocks, worldWidth, worldHeight]);
 
-  // Mouse events (screen space = CSS pixels)
+  // Mouse events
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -428,8 +443,16 @@ export default function GameCanvas({
     const onMouseDown = (e: MouseEvent) => {
       if (paused) return;
       e.preventDefault();
+      
+      // Ensure audio context is running
+      audio.resume();
+
       const me = (players as PlayersMap)[myId];
       if (!me) return;
+
+      // Play swing SFX ASAP for snappy feel
+      audio.playSFX("sfx_swing", { playbackRate: 0.98 + Math.random() * 0.04 });
+
       const worldMouseX = screenMouseRef.current.x + camRef.current.x;
       const worldMouseY = screenMouseRef.current.y + camRef.current.y;
       const angle = Math.atan2(worldMouseY - me.y, worldMouseX - me.x);
@@ -444,14 +467,15 @@ export default function GameCanvas({
     };
   }, [myId, players, paused]);
 
-  // Keyboard
+  // Keyboard - 여기서는 ESC를 제외한 게임 조작 키만 처리
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (paused) return;
 
-      // KeyboardEvent.code를 사용하여 물리적 키 위치로 판단 (언어/대소문자 무관)
       const code = e.code.toLowerCase();
       const key = e.key.toLowerCase();
+
+      // ESC는 App.tsx에서 처리하므로 여기서는 제외
 
       // 이동키 - WASD와 화살표키 모두 지원
       if (
